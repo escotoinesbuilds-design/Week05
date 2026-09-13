@@ -1,43 +1,119 @@
+"use client";
+
+import { useState } from "react";
+
 const careOptions = [
   {
     name: "Dra. Laura Méndez Torres",
     specialty: "Cardiología",
+    providerType: "doctora",
+    priceValue: 850,
     price: "$850 MXN",
     location: "Hospital San Ángel",
+    distanceValue: 3,
     distance: "A 3 km de tu ubicación",
+    dateValue: "2025-04-25",
     availability: "Mañana, 25 de abril de 2025 · 9:00 AM",
-    reason: "Es apropiada para tu referencia y coincide con tus preferencias.",
-    labels: ["Dentro de tu presupuesto", "Más cerca", "Coincide con tu preferencia"],
-    warning: "",
+    reason: "Es clínicamente apropiada para tu referencia de cardiología.",
     featured: true,
   },
   {
     name: "Dra. Patricia Ruiz Castro",
     specialty: "Cardiología intervencionista",
+    providerType: "doctora",
+    priceValue: 1200,
     price: "$1,200 MXN",
     location: "Centro Médico del Valle",
+    distanceValue: 4,
     distance: "A 4 km de tu ubicación",
+    dateValue: "2025-04-25",
     availability: "Mañana, 25 de abril de 2025 · 11:30 AM",
-    reason: "Es apropiada para tu referencia y tiene disponibilidad cercana.",
-    labels: ["Más especializada", "Coincide con tu preferencia"],
-    warning: "Supera tu presupuesto por $200",
+    reason: "Es clínicamente apropiada para tu referencia de cardiología.",
     featured: false,
   },
   {
     name: "Dra. Gabriela Sánchez",
     specialty: "Cardiología",
+    providerType: "doctora",
+    priceValue: 900,
     price: "$900 MXN",
     location: "Clínica Bienestar",
+    distanceValue: 7,
     distance: "A 7 km de tu ubicación",
+    dateValue: "2025-04-25",
     availability: "Mañana, 25 de abril de 2025 · 4:00 PM",
-    reason: "Es apropiada para tu referencia y coincide con tu preferencia de proveedor.",
-    labels: ["Dentro de tu presupuesto", "Coincide con tu preferencia"],
-    warning: "Está fuera de tu rango preferido",
+    reason: "Es clínicamente apropiada para tu referencia de cardiología.",
     featured: false,
   },
 ];
 
+type Preferences = {
+  budget: string;
+  distance: string;
+  date: string;
+  provider: string;
+};
+
 export default function Home() {
+  const [preferences, setPreferences] = useState<Preferences>({
+    budget: "1000",
+    distance: "5",
+    date: "2025-04-25",
+    provider: "doctora",
+  });
+  const [showAlternatives, setShowAlternatives] = useState(false);
+
+  const budget = Number(preferences.budget) || 0;
+  const maximumDistance = Number(preferences.distance);
+  const matchingOptions = careOptions.filter((option) => (
+    option.priceValue <= budget &&
+    option.distanceValue <= maximumDistance &&
+    option.dateValue === preferences.date &&
+    (preferences.provider === "sin-preferencia" || option.providerType === preferences.provider)
+  ));
+  const displayedOptions = matchingOptions.length > 0
+    ? matchingOptions
+    : showAlternatives
+      ? careOptions
+      : [];
+  const hasNoPerfectMatch = matchingOptions.length === 0;
+
+  const updatePreference = (name: keyof Preferences, value: string) => {
+    setPreferences((current) => ({ ...current, [name]: value }));
+    setShowAlternatives(false);
+  };
+
+  const getOptionStatus = (option: typeof careOptions[number]) => {
+    const labels = [];
+    const warnings = [];
+
+    if (option.priceValue <= budget) {
+      labels.push("Dentro de tu presupuesto");
+    } else {
+      warnings.push(`Supera tu presupuesto por $${option.priceValue - budget}`);
+    }
+
+    if (option.distanceValue <= maximumDistance) {
+      labels.push("Más cerca");
+    } else {
+      warnings.push("Está fuera de tu rango preferido");
+    }
+
+    if (option.dateValue === preferences.date) {
+      labels.push("Coincide con tu fecha");
+    } else {
+      warnings.push("No coincide con tu fecha preferida");
+    }
+
+    if (preferences.provider === "sin-preferencia" || option.providerType === preferences.provider) {
+      labels.push("Coincide con tu preferencia");
+    } else {
+      warnings.push("No coincide con tu preferencia de proveedor");
+    }
+
+    return { labels, warnings };
+  };
+
   return (
     <main className="page-shell">
       <header className="topbar">
@@ -75,13 +151,13 @@ export default function Home() {
           <span className="section-status">Datos de demostración</span>
         </div>
 
-        <form className="preferences-form">
+        <form className="preferences-form" onSubmit={(event) => event.preventDefault()}>
           <label className="preference-field" htmlFor="budget">
             <span className="field-icon" aria-hidden="true">$</span>
             <span className="field-content">
               <span className="field-label">Presupuesto máximo</span>
               <span className="field-control-wrap">
-                <input id="budget" name="budget" type="number" defaultValue="1000" min="0" step="50" />
+                <input id="budget" name="budget" type="number" value={preferences.budget} onChange={(event) => updatePreference("budget", event.target.value)} min="0" step="50" />
                 <span className="field-suffix">MXN</span>
               </span>
             </span>
@@ -91,7 +167,7 @@ export default function Home() {
             <span className="field-icon" aria-hidden="true">⌖</span>
             <span className="field-content">
               <span className="field-label">Distancia máxima</span>
-              <select id="distance" name="distance" defaultValue="5">
+              <select id="distance" name="distance" value={preferences.distance} onChange={(event) => updatePreference("distance", event.target.value)}>
                 <option value="2">Hasta 2 km</option>
                 <option value="5">Hasta 5 km</option>
                 <option value="10">Hasta 10 km</option>
@@ -103,7 +179,7 @@ export default function Home() {
             <span className="field-icon" aria-hidden="true">▣</span>
             <span className="field-content">
               <span className="field-label">Fecha preferida</span>
-              <input id="date" name="date" type="date" defaultValue="2025-04-25" />
+              <input id="date" name="date" type="date" value={preferences.date} onChange={(event) => updatePreference("date", event.target.value)} />
             </span>
           </label>
 
@@ -111,7 +187,7 @@ export default function Home() {
             <span className="field-icon" aria-hidden="true">◯</span>
             <span className="field-content">
               <span className="field-label">Preferencia de proveedor</span>
-              <select id="provider" name="provider" defaultValue="doctora">
+              <select id="provider" name="provider" value={preferences.provider} onChange={(event) => updatePreference("provider", event.target.value)}>
                 <option value="sin-preferencia">Sin preferencia</option>
                 <option value="doctora">Doctora</option>
                 <option value="doctor">Doctor</option>
@@ -127,14 +203,31 @@ export default function Home() {
             <p className="eyebrow">Solo para esta demostración</p>
             <h2 id="options-title">Opciones de atención simuladas</h2>
           </div>
-          <span className="section-status">3 opciones</span>
+          <span className="section-status">{displayedOptions.length} opciones</span>
         </div>
         <p className="options-intro">
           Estas opciones son clínicamente apropiadas para tu motivo de seguimiento. Te mostramos por qué aparece cada una y qué preferencias cumple.
         </p>
 
+        {hasNoPerfectMatch && (
+          <div className="tradeoff-panel" role="status">
+            <strong>No existe una opción que cumpla todas tus preferencias.</strong>
+            <p>Decide si quieres mantener tus condiciones actuales o revisar alternativas que explican qué tendría que cambiar.</p>
+            <div className="choice-actions">
+              <button type="button" className="choice-button choice-button-secondary" onClick={() => setShowAlternatives(false)}>
+                Mantener mis preferencias
+              </button>
+              <button type="button" className="choice-button choice-button-primary" onClick={() => setShowAlternatives(true)}>
+                Ver alternativas cercanas
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="options-list">
-          {careOptions.map((option) => (
+          {displayedOptions.map((option) => {
+            const { labels, warnings } = getOptionStatus(option);
+            return (
             <article className={`option-card${option.featured ? " option-card-featured" : ""}`} key={option.name}>
               <div className="option-topline">
                 <span className="simulated-label">Opción simulada</span>
@@ -160,14 +253,15 @@ export default function Home() {
               </div>
               <div className="why-shown">
                 <span className="detail-label">Por qué se muestra</span>
-                <p>{option.reason}</p>
+                <p>{option.reason} {warnings.length > 0 ? "Se incluye para que compares este tradeoff." : "Cumple tus preferencias actuales."}</p>
               </div>
               <div className="option-labels" aria-label="Coincidencias y tradeoffs">
-                {option.labels.map((label) => <span className="match-label" key={label}>✓ {label}</span>)}
-                {option.warning && <span className="warning-label">! {option.warning}</span>}
+                {labels.map((label) => <span className="match-label" key={label}>✓ {label}</span>)}
+                {warnings.map((warning) => <span className="warning-label" key={warning}>! {warning}</span>)}
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       </section>
 
