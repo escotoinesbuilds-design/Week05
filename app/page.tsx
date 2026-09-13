@@ -313,7 +313,7 @@ export default function Home() {
             </div>
             <div className="selection-actions">
               <button type="button" className="confirm-button" onClick={() => setIsConfirmed(true)}>
-                Confirmar esta opción
+                Confirmar selección simulada
               </button>
               <button type="button" className="escalation-button" onClick={() => {
                 setIsConfirmed(false);
@@ -322,7 +322,7 @@ export default function Home() {
                 Escalar a navegación humana
               </button>
             </div>
-            {isConfirmed && <p className="simulation-message" role="status">Confirmación simulada. No se ha realizado ninguna reserva ni se ha agendado una cita.</p>}
+            {isConfirmed && <p className="simulation-message" role="status">Esto solo confirma tu selección simulada. No reserva ni agenda una cita real.</p>}
             {escalationRequested && <p className="simulation-message" role="status">Escalación simulada: una persona navegadora tomaría el relevo para ayudarte con el siguiente paso.</p>}
           </section>
         )}
