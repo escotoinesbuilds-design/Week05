@@ -62,25 +62,44 @@ export default function Home() {
     provider: "doctora",
   });
   const [showAlternatives, setShowAlternatives] = useState(false);
+  const [selectedOptionName, setSelectedOptionName] = useState<string | null>(null);
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [escalationRequested, setEscalationRequested] = useState(false);
 
-  const budget = Number(preferences.budget) || 0;
+  const budgetValue = Number(preferences.budget);
+  const hasValidBudget = preferences.budget.trim() !== "" && Number.isFinite(budgetValue) && budgetValue >= 0 && budgetValue <= 100000;
+  const hasValidDistance = ["2", "5", "10"].includes(preferences.distance);
+  const hasValidDate = preferences.date >= "2025-01-01" && preferences.date <= "2026-12-31";
+  const hasValidPreferences = hasValidBudget && hasValidDistance && hasValidDate;
+  const preferenceError = !hasValidBudget
+    ? "Ingresa un presupuesto entre $0 y $100,000 MXN."
+    : !hasValidDate
+      ? "Elige una fecha entre enero de 2025 y diciembre de 2026."
+      : "";
+  const budget = hasValidBudget ? budgetValue : 0;
   const maximumDistance = Number(preferences.distance);
-  const matchingOptions = careOptions.filter((option) => (
-    option.priceValue <= budget &&
-    option.distanceValue <= maximumDistance &&
-    option.dateValue === preferences.date &&
-    (preferences.provider === "sin-preferencia" || option.providerType === preferences.provider)
-  ));
+  const matchingOptions = hasValidPreferences
+    ? careOptions.filter((option) => (
+      option.priceValue <= budget &&
+      option.distanceValue <= maximumDistance &&
+      option.dateValue === preferences.date &&
+      (preferences.provider === "sin-preferencia" || option.providerType === preferences.provider)
+    ))
+    : [];
   const displayedOptions = matchingOptions.length > 0
     ? matchingOptions
     : showAlternatives
       ? careOptions
       : [];
   const hasNoPerfectMatch = matchingOptions.length === 0;
+  const selectedOption = careOptions.find((option) => option.name === selectedOptionName) ?? null;
 
   const updatePreference = (name: keyof Preferences, value: string) => {
     setPreferences((current) => ({ ...current, [name]: value }));
     setShowAlternatives(false);
+    setSelectedOptionName(null);
+    setIsConfirmed(false);
+    setEscalationRequested(false);
   };
 
   const getOptionStatus = (option: typeof careOptions[number]) => {
@@ -157,7 +176,7 @@ export default function Home() {
             <span className="field-content">
               <span className="field-label">Presupuesto máximo</span>
               <span className="field-control-wrap">
-                <input id="budget" name="budget" type="number" value={preferences.budget} onChange={(event) => updatePreference("budget", event.target.value)} min="0" step="50" />
+                <input id="budget" name="budget" type="number" value={preferences.budget} onChange={(event) => updatePreference("budget", event.target.value)} min="0" max="100000" step="50" required aria-invalid={!hasValidBudget} />
                 <span className="field-suffix">MXN</span>
               </span>
             </span>
@@ -179,7 +198,7 @@ export default function Home() {
             <span className="field-icon" aria-hidden="true">▣</span>
             <span className="field-content">
               <span className="field-label">Fecha preferida</span>
-              <input id="date" name="date" type="date" value={preferences.date} onChange={(event) => updatePreference("date", event.target.value)} />
+              <input id="date" name="date" type="date" value={preferences.date} onChange={(event) => updatePreference("date", event.target.value)} min="2025-01-01" max="2026-12-31" required aria-invalid={!hasValidDate} />
             </span>
           </label>
 
@@ -195,6 +214,7 @@ export default function Home() {
             </span>
           </label>
         </form>
+        {preferenceError && <p className="validation-message" role="alert">{preferenceError}</p>}
       </section>
 
       <section className="options-section" aria-labelledby="options-title">
@@ -209,7 +229,7 @@ export default function Home() {
           Estas opciones son clínicamente apropiadas para tu motivo de seguimiento. Te mostramos por qué aparece cada una y qué preferencias cumple.
         </p>
 
-        {hasNoPerfectMatch && (
+        {hasNoPerfectMatch && hasValidPreferences && (
           <div className="tradeoff-panel" role="status">
             <strong>No existe una opción que cumpla todas tus preferencias.</strong>
             <p>Decide si quieres mantener tus condiciones actuales o revisar alternativas que explican qué tendría que cambiar.</p>
@@ -228,7 +248,7 @@ export default function Home() {
           {displayedOptions.map((option) => {
             const { labels, warnings } = getOptionStatus(option);
             return (
-            <article className={`option-card${option.featured ? " option-card-featured" : ""}`} key={option.name}>
+            <article className={`option-card${option.featured ? " option-card-featured" : ""}${selectedOptionName === option.name ? " option-card-selected" : ""}`} key={option.name}>
               <div className="option-topline">
                 <span className="simulated-label">Opción simulada</span>
                 {option.featured && <span className="best-label">Mejor ajuste</span>}
@@ -259,10 +279,50 @@ export default function Home() {
                 {labels.map((label) => <span className="match-label" key={label}>✓ {label}</span>)}
                 {warnings.map((warning) => <span className="warning-label" key={warning}>! {warning}</span>)}
               </div>
+              <button
+                type="button"
+                className="select-option-button"
+                aria-pressed={selectedOptionName === option.name}
+                onClick={() => {
+                  setSelectedOptionName(option.name);
+                  setIsConfirmed(false);
+                  setEscalationRequested(false);
+                }}
+              >
+                {selectedOptionName === option.name ? "Opción seleccionada" : "Seleccionar esta opción"}
+              </button>
             </article>
             );
           })}
         </div>
+
+        {selectedOption && (
+          <section className="selection-panel" aria-labelledby="selection-title">
+            <div className="selection-heading">
+              <div>
+                <p className="eyebrow">Tu decisión</p>
+                <h2 id="selection-title">Opción seleccionada</h2>
+              </div>
+              <span className="simulated-label">Selección simulada</span>
+            </div>
+            <div className="selection-summary">
+              <strong>{selectedOption.name}</strong>
+              <span>{selectedOption.specialty}</span>
+              <span>{selectedOption.price} · {selectedOption.location}</span>
+              <span>{selectedOption.distance} · {selectedOption.availability}</span>
+            </div>
+            <div className="selection-actions">
+              <button type="button" className="confirm-button" onClick={() => setIsConfirmed(true)}>
+                Confirmar esta opción
+              </button>
+              <button type="button" className="escalation-button" onClick={() => setEscalationRequested(true)}>
+                Escalar a navegación humana
+              </button>
+            </div>
+            {isConfirmed && <p className="simulation-message" role="status">Confirmación simulada. No se ha realizado ninguna reserva ni se ha agendado una cita.</p>}
+            {escalationRequested && <p className="simulation-message" role="status">Escalación simulada: una persona navegadora tomaría el relevo para ayudarte con el siguiente paso.</p>}
+          </section>
+        )}
       </section>
 
       <p className="disclaimer">
