@@ -1,3 +1,42 @@
+const careOptions = [
+  {
+    name: "Dra. Laura Méndez Torres",
+    specialty: "Cardiología",
+    price: "$850 MXN",
+    location: "Hospital San Ángel",
+    distance: "A 3 km de tu ubicación",
+    availability: "Mañana, 25 de abril de 2025 · 9:00 AM",
+    reason: "Es apropiada para tu referencia y coincide con tus preferencias.",
+    labels: ["Dentro de tu presupuesto", "Más cerca", "Coincide con tu preferencia"],
+    warning: "",
+    featured: true,
+  },
+  {
+    name: "Dra. Patricia Ruiz Castro",
+    specialty: "Cardiología intervencionista",
+    price: "$1,200 MXN",
+    location: "Centro Médico del Valle",
+    distance: "A 4 km de tu ubicación",
+    availability: "Mañana, 25 de abril de 2025 · 11:30 AM",
+    reason: "Es apropiada para tu referencia y tiene disponibilidad cercana.",
+    labels: ["Más especializada", "Coincide con tu preferencia"],
+    warning: "Supera tu presupuesto por $200",
+    featured: false,
+  },
+  {
+    name: "Dra. Gabriela Sánchez",
+    specialty: "Cardiología",
+    price: "$900 MXN",
+    location: "Clínica Bienestar",
+    distance: "A 7 km de tu ubicación",
+    availability: "Mañana, 25 de abril de 2025 · 4:00 PM",
+    reason: "Es apropiada para tu referencia y coincide con tu preferencia de proveedor.",
+    labels: ["Dentro de tu presupuesto", "Coincide con tu preferencia"],
+    warning: "Está fuera de tu rango preferido",
+    featured: false,
+  },
+];
+
 export default function Home() {
   return (
     <main className="page-shell">
@@ -82,8 +121,58 @@ export default function Home() {
         </form>
       </section>
 
+      <section className="options-section" aria-labelledby="options-title">
+        <div className="options-heading">
+          <div>
+            <p className="eyebrow">Solo para esta demostración</p>
+            <h2 id="options-title">Opciones de atención simuladas</h2>
+          </div>
+          <span className="section-status">3 opciones</span>
+        </div>
+        <p className="options-intro">
+          Estas opciones son clínicamente apropiadas para tu motivo de seguimiento. Te mostramos por qué aparece cada una y qué preferencias cumple.
+        </p>
+
+        <div className="options-list">
+          {careOptions.map((option) => (
+            <article className={`option-card${option.featured ? " option-card-featured" : ""}`} key={option.name}>
+              <div className="option-topline">
+                <span className="simulated-label">Opción simulada</span>
+                {option.featured && <span className="best-label">Mejor ajuste</span>}
+              </div>
+              <div className="option-main">
+                <div className="provider-avatar" aria-hidden="true">{option.name.charAt(5)}</div>
+                <div className="provider-info">
+                  <h3>{option.name}</h3>
+                  <p>{option.specialty}</p>
+                  <p className="option-location">{option.location} · {option.distance}</p>
+                </div>
+              </div>
+              <div className="option-details">
+                <div>
+                  <span className="detail-label">Precio</span>
+                  <strong>{option.price}</strong>
+                </div>
+                <div>
+                  <span className="detail-label">Disponibilidad</span>
+                  <strong>{option.availability}</strong>
+                </div>
+              </div>
+              <div className="why-shown">
+                <span className="detail-label">Por qué se muestra</span>
+                <p>{option.reason}</p>
+              </div>
+              <div className="option-labels" aria-label="Coincidencias y tradeoffs">
+                {option.labels.map((label) => <span className="match-label" key={label}>✓ {label}</span>)}
+                {option.warning && <span className="warning-label">! {option.warning}</span>}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <p className="disclaimer">
-        Esta pantalla usa información inventada para una demostración. La necesidad de seguimiento ya fue registrada por un profesional de salud.
+        Toda la información de esta pantalla es inventada y simulada para una demostración. La necesidad de seguimiento ya fue registrada por un profesional de salud.
       </p>
     </main>
   );
