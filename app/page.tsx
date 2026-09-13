@@ -315,7 +315,10 @@ export default function Home() {
               <button type="button" className="confirm-button" onClick={() => setIsConfirmed(true)}>
                 Confirmar esta opción
               </button>
-              <button type="button" className="escalation-button" onClick={() => setEscalationRequested(true)}>
+              <button type="button" className="escalation-button" onClick={() => {
+                setIsConfirmed(false);
+                setEscalationRequested(true);
+              }}>
                 Escalar a navegación humana
               </button>
             </div>
